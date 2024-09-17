@@ -12,30 +12,36 @@ import {Textarea} from "@nextui-org/input";
 import  { useState } from 'react';
 import {Input} from "@nextui-org/input";
 import { invoke } from "@tauri-apps/api/core";
+import toast, { Toaster } from 'react-hot-toast';
 
 export default function IndexPage() {
   const [bootstrap, setBootstrap] = useState('');
   const [topic, setTopic] = useState('');
+  const [message,setMessage] = useState('');
   const buttonSubmit = () =>{
     console.log( "topic is" + topic);
     console.log("bootstrap is" + bootstrap);
-    invoke("send_kafka",{server:bootstrap ,topic:topic,message:"hihi"})
-
-  }
+   let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
+   res.then((m) =>{ 
+    toast('Here is your toast. ' + m )
+   })
+}
+  const theStyle={"margin-top":"20px"}
   return (
     <DefaultLayout>
     <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
       <Input type="input" label="bootstrap server" value={bootstrap} onValueChange={setBootstrap} />
       <Input type="input" label="topic" value={topic} onValueChange={setTopic} />
     </div>
-    <div>
+    <div style={theStyle}>
     <Textarea
       label="Description"
       placeholder="Enter your description"
-      className="max-w-xs"
+      // className="max-w-xs"
     />
     </div>
-    <div>
+    <Toaster />
+    <div style={theStyle}>
     <Button color="primary" onClick={buttonSubmit}>
       Send
     </Button>
