@@ -20,10 +20,16 @@ export default function IndexPage() {
   const [topic, setTopic] = useState('');
   const [message,setMessage] = useState('');
   const [isVertical , setIsVertical] = useState(true);
+  const [table , setTable] = useState([])
   const buttonSubmit = () =>{
     console.log( "topic is" + topic);
     console.log("bootstrap is" + bootstrap);
    let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
+   let alltopic  = invoke('get_all_topic_from_server',{server:bootstrap})
+   alltopic.then(re=>{
+    setTable(re.topics)
+     console.log("aaaaa" + JSON.stringify(re.topics))
+   })
    res.then((m) =>{ 
     toast('Here is your toast. ' + m )
    })
@@ -55,31 +61,19 @@ export default function IndexPage() {
            <Tab key="topic" title="Topic">
            <Table aria-label="Example static collection table">
       <TableHeader>
-        <TableColumn>NAME</TableColumn>
+        <TableColumn>Topic</TableColumn>
         <TableColumn>ROLE</TableColumn>
         <TableColumn>STATUS</TableColumn>
       </TableHeader>
       <TableBody>
-        <TableRow key="1">
-          <TableCell>Tony Reichert</TableCell>
-          <TableCell>CEO</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-        <TableRow key="2">
-          <TableCell>Zoey Lang</TableCell>
-          <TableCell>Technical Lead</TableCell>
-          <TableCell>Paused</TableCell>
-        </TableRow>
-        <TableRow key="3">
-          <TableCell>Jane Fisher</TableCell>
-          <TableCell>Senior Developer</TableCell>
-          <TableCell>Active</TableCell>
-        </TableRow>
-        <TableRow key="4">
-          <TableCell>William Howard</TableCell>
-          <TableCell>Community Manager</TableCell>
-          <TableCell>Vacation</TableCell>
-        </TableRow>
+      {table.map(item => (
+        <TableRow key={item}>
+        <TableCell>{item}</TableCell>
+        <TableCell>CEO</TableCell>
+        <TableCell>Active</TableCell>
+      </TableRow>
+        ))}
+
       </TableBody>
     </Table>
            </Tab>

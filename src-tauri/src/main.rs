@@ -1,9 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+use app_lib::get_all_topic;
 use kafka::producer::{Producer, Record, RequiredAcks};
 use std::fmt::Write;
 use std::time::Duration;
-use tauri::Manager;
+use tauri::{Config, Manager};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -15,8 +16,42 @@ fn my_custom_command() -> String {
     format!("I was invoked from JavaScript!")
 }
 
+
+
+
+#[tauri::command]
+fn get_all_topic_from_server(server:String)->app_lib::Config{
+    let  cfg = &mut app_lib::Config{
+        brokers:vec![server.to_string()],    
+            topics: Vec::new(),
+            header: false,
+            host: false,
+            size: false,
+            topic_separators: false,
+        };
+  let res =  app_lib::get_all_topic(cfg);
+  return  res.unwrap().clone()
+
+}
 #[tauri::command]
 fn send_kafka(server: String, topic: String, message: String) -> String {
+    // let  cfg = &mut app_lib::Config{
+    //     brokers:vec!["127.0.0.1:9092".to_string()],    
+    //         topics: Vec::new(),
+    //         header: false,
+    //         host: false,
+    //         size: false,
+    //         topic_separators: false,
+    //     };
+    // let topicRes = get_all_topic( cfg);
+    // match topicRes {
+    //     Ok(re) =>{
+    //         println!("--aa{:#?}" ,re )
+    //     }
+    //     Err(err) =>{
+    //         println!("err{}",err)
+    //     }
+    // }
     println!(
         "I was invoked from JavaScript, with this message: server{} , topic :{} , message{}",
         server, topic, message
@@ -58,7 +93,8 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![greet])
         .invoke_handler(tauri::generate_handler![my_custom_command])
-        .invoke_handler(tauri::generate_handler![send_kafka])
+        .invoke_handler(tauri::generate_handler![send_kafka,get_all_topic_from_server])
+
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
