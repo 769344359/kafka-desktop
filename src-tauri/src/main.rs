@@ -1,10 +1,13 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use app_lib::get_all_topic;
-use kafka::producer::{Producer, Record, RequiredAcks};
+use rdkafka::config::ClientConfig;
+use rdkafka::message::{Header, OwnedHeaders};
+use rdkafka::producer::{FutureProducer, FutureRecord};
 use std::fmt::Write;
 use std::time::Duration;
 use tauri::{Config, Manager};
+use rdkafka::producer::BaseProducer;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -22,7 +25,7 @@ fn my_custom_command() -> String {
 #[tauri::command]
 fn get_all_topic_from_server(server:String)->app_lib::Config{
     let  cfg = &mut app_lib::Config{
-        brokers:vec![server.to_string()],    
+        brokers:server.to_string(),    
             topics: Vec::new(),
             header: false,
             host: false,
@@ -35,6 +38,11 @@ fn get_all_topic_from_server(server:String)->app_lib::Config{
 }
 #[tauri::command]
 fn send_kafka(server: String, topic: String, message: String) -> String {
+    let producer: &BaseProducer = &ClientConfig::new()
+    .set("bootstrap.servers", server)
+    .set("message.timeout.ms", "5000")
+    .create()
+    .expect("Producer creation error");
     // let  cfg = &mut app_lib::Config{
     //     brokers:vec!["127.0.0.1:9092".to_string()],    
     //         topics: Vec::new(),
@@ -52,28 +60,28 @@ fn send_kafka(server: String, topic: String, message: String) -> String {
     //         println!("err{}",err)
     //     }
     // }
-    println!(
-        "I was invoked from JavaScript, with this message: server{} , topic :{} , message{}",
-        server, topic, message
-    );
-    let mut producer = Producer::from_hosts(vec!["localhost:9092".to_owned()])
-        .with_ack_timeout(Duration::from_secs(1))
-        .with_required_acks(RequiredAcks::One)
-        .create()
-        .unwrap();
+    // println!(
+    //     "I was invoked from JavaScript, with this message: server{} , topic :{} , message{}",
+    //     server, topic, message
+    // );
+    // let mut producer = Producer::from_hosts(vec!["localhost:9092".to_owned()])
+    //     .with_ack_timeout(Duration::from_secs(1))
+    //     .with_required_acks(RequiredAcks::One)
+    //     .create()
+    //     .unwrap();
 
-    let mut buf = message;
+    // let mut buf = message;
 
-    // let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
-    let res = producer.send(&Record::from_value(&topic, buf.as_bytes()));
-    match res {
-        Ok(_) => {}
-        Err(err) => {
-            println!("err:{}", err);
-            return format!("{}", err);
-        }
-    }
-    buf.clear();
+    // // let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
+    // let res = producer.send(&Record::from_value(&topic, buf.as_bytes()));
+    // match res {
+    //     Ok(_) => {}
+    //     Err(err) => {
+    //         println!("err:{}", err);
+    //         return format!("{}", err);
+    //     }
+    // }
+    // buf.clear();
     return String::from("ok");
 }
 
