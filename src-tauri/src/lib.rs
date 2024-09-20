@@ -1,8 +1,9 @@
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
+use rdkafka::util::Timeout;
 use std::time::Duration;
 use serde::Serialize;
-use rdkafka::producer::BaseProducer;
+use rdkafka::producer::{BaseProducer, Producer};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -18,6 +19,16 @@ pub struct Config {
    pub host: bool,
    pub size: bool,
    pub topic_separators: bool,
+}
+
+pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
+    let producer: &BaseProducer = &ClientConfig::new()
+    .set("bootstrap.servers", cfg.brokers.clone())
+    .set("message.timeout.ms", "5000")
+    .create()
+    .expect("Producer creation error");
+    producer.client().fetch_group_list(None, Timeout::After(Duration::new(5,0)));
+        Ok(cfg)
 }
 pub fn get_all_topic(cfg :&mut Config) -> Result<&mut Config, String>{
 
