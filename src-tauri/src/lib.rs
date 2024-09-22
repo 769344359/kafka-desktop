@@ -1,5 +1,6 @@
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
+use rdkafka::groups::GroupList;
 use rdkafka::util::Timeout;
 use std::time::Duration;
 use serde::Serialize;
@@ -15,6 +16,7 @@ pub fn run() {
 pub struct Config {
    pub brokers: String,
    pub topics: Vec<String>,
+   pub groups: Vec<String>,
    pub header: bool,
    pub host: bool,
    pub size: bool,
@@ -27,7 +29,18 @@ pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
     .set("message.timeout.ms", "5000")
     .create()
     .expect("Producer creation error");
-    producer.client().fetch_group_list(None, Timeout::After(Duration::new(5,0)));
+  let res =   producer.client().fetch_group_list(None, Timeout::After(Duration::new(5,0)));
+    match res {
+        Ok(ok) =>{
+           let groupList =  ok.groups();
+           let mut  l = Vec::new();
+           for  val in groupList {
+             l.push(String::from(val.name()))
+           }
+           cfg.groups = l;
+        },
+        Err(_)=>{}
+    }
         Ok(cfg)
 }
 pub fn get_all_topic(cfg :&mut Config) -> Result<&mut Config, String>{

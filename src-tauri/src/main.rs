@@ -27,6 +27,7 @@ fn get_all_topic_from_server(server:String)->app_lib::Config{
     let  cfg = &mut app_lib::Config{
         brokers:server.to_string(),    
             topics: Vec::new(),
+            groups: Vec::new(),
             header: false,
             host: false,
             size: false,
