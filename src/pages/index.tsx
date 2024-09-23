@@ -26,12 +26,16 @@ export default function IndexPage() {
     console.log("bootstrap is" + bootstrap);
    let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
    let alltopic  = invoke('get_all_topic_from_server',{server:bootstrap})
+   let allgroup = invoke('get_all_group_from_kafka',{server:bootstrap} )
    alltopic.then(re=>{
     setTable(re.topics)
      console.log("aaaaa" + JSON.stringify(re.topics))
    })
    res.then((m) =>{ 
     toast('Here is your toast. ' + m )
+   })
+   allgroup.then(re =>{
+    console.log("aaaaa" + JSON.stringify(re.groups))
    })
 }
   const theStyle={"margin-top":"20px"}

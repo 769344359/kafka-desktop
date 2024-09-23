@@ -44,48 +44,23 @@ fn send_kafka(server: String, topic: String, message: String) -> String {
     .set("message.timeout.ms", "5000")
     .create()
     .expect("Producer creation error");
-    // let  cfg = &mut app_lib::Config{
-    //     brokers:vec!["127.0.0.1:9092".to_string()],    
-    //         topics: Vec::new(),
-    //         header: false,
-    //         host: false,
-    //         size: false,
-    //         topic_separators: false,
-    //     };
-    // let topicRes = get_all_topic( cfg);
-    // match topicRes {
-    //     Ok(re) =>{
-    //         println!("--aa{:#?}" ,re )
-    //     }
-    //     Err(err) =>{
-    //         println!("err{}",err)
-    //     }
-    // }
-    // println!(
-    //     "I was invoked from JavaScript, with this message: server{} , topic :{} , message{}",
-    //     server, topic, message
-    // );
-    // let mut producer = Producer::from_hosts(vec!["localhost:9092".to_owned()])
-    //     .with_ack_timeout(Duration::from_secs(1))
-    //     .with_required_acks(RequiredAcks::One)
-    //     .create()
-    //     .unwrap();
-
-    // let mut buf = message;
-
-    // // let _ = write!(&mut buf, "{}", i); // some computation of the message data to be sent
-    // let res = producer.send(&Record::from_value(&topic, buf.as_bytes()));
-    // match res {
-    //     Ok(_) => {}
-    //     Err(err) => {
-    //         println!("err:{}", err);
-    //         return format!("{}", err);
-    //     }
-    // }
-    // buf.clear();
     return String::from("ok");
 }
 
+#[tauri::command]
+fn get_all_group_from_kafka(server:String) -> app_lib::Config {
+    let  cfg = &mut app_lib::Config{
+        brokers:server.to_string(),    
+            topics: Vec::new(),
+            groups: Vec::new(),
+            header: false,
+            host: false,
+            size: false,
+            topic_separators: false,
+        };
+  let res =  app_lib::get_all_group(cfg);
+  return  res.unwrap().clone()
+}
 fn main() {
     tauri::Builder::default()
         ///// begin debug
@@ -102,8 +77,7 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![greet])
         .invoke_handler(tauri::generate_handler![my_custom_command])
-        .invoke_handler(tauri::generate_handler![send_kafka,get_all_topic_from_server])
-
+        .invoke_handler(tauri::generate_handler![send_kafka,get_all_topic_from_server,get_all_group_from_kafka])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
