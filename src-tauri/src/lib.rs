@@ -33,14 +33,22 @@ pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
     match res {
         Ok(ok) =>{
            let groupList =  ok.groups();
+
            let mut  l = Vec::new();
            for  val in groupList {
+            // println!("---{:?}", val.members());
+            println!("state: {:?}",val.state());
+            for  a in  val.members(){
+              
+                println!("clientid :{:?}", a.client_id())
+            }
              l.push(String::from(val.name()))
            }
            cfg.groups = l;
         },
         Err(_)=>{}
     }
+    println!("all group is {:?}" , cfg);
         Ok(cfg)
 }
 pub fn get_all_topic(cfg :&mut Config) -> Result<&mut Config, String>{

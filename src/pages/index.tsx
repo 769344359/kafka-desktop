@@ -21,6 +21,7 @@ export default function IndexPage() {
   const [message,setMessage] = useState('');
   const [isVertical , setIsVertical] = useState(true);
   const [table , setTable] = useState([])
+  const [groups,setGroups] = useState([])
   const buttonSubmit = () =>{
     console.log( "topic is" + topic);
     console.log("bootstrap is" + bootstrap);
@@ -35,6 +36,7 @@ export default function IndexPage() {
     toast('Here is your toast. ' + m )
    })
    allgroup.then(re =>{
+    setGroups(re.groups)
     console.log("aaaaa" + JSON.stringify(re.groups))
    })
 }
@@ -79,10 +81,26 @@ export default function IndexPage() {
         ))}
 
       </TableBody>
-    </Table>
-           </Tab>
-           <Tab key="groups"  title="Groups" >
+          </Table>
+                </Tab>
+                <Tab key="groups"  title="Groups" >
+                <Table aria-label="Example static collection table">
+            <TableHeader>
+              <TableColumn>Groups</TableColumn>
+              <TableColumn>ROLE</TableColumn>
+              <TableColumn>STATUS</TableColumn>
+            </TableHeader>
+            <TableBody>
+            {groups.map(item => (
+              <TableRow key={item}>
+              <TableCell>{item}</TableCell>
+              <TableCell>CEO</TableCell>
+              <TableCell>Active</TableCell>
+            </TableRow>
+              ))}
 
+            </TableBody>
+          </Table>
            </Tab>
     </Tabs>
     </DefaultLayout>
