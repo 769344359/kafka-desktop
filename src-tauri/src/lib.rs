@@ -35,18 +35,26 @@ pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
            let groupList =  ok.groups();
 
            let mut  l = Vec::new();
+           println!("aaaabbb{:?}: empty" ,groupList);
            for  val in groupList {
             // println!("---{:?}", val.members());
             println!("state: {:?}",val.state());
-            for  a in  val.members(){
-              
-                println!("clientid :{:?}", a.client_id())
+            if val.state() == "Empty"{
+                println!("clientId: empty")
+            }else{
+                println!("clientId: not null");
+                for  a in  val.members(){
+                
+                    println!("clientid :{:?}", a.client_id())
+                }
             }
              l.push(String::from(val.name()))
            }
            cfg.groups = l;
         },
-        Err(_)=>{}
+        Err(err)=>{
+            println!("aaa err{:?}" , err)
+        }
     }
     println!("all group is {:?}" , cfg);
         Ok(cfg)
