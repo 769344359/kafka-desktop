@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
     "preview": "vite preview",
-    "tauri": "WEBKIT_DISABLE_COMPOSITING_MODE=1  tauri"
+    "tauri": "RUST_BACKTRACE=1 WEBKIT_DISABLE_COMPOSITING_MODE=1  tauri"
   },
   "dependencies": {
     "@nextui-org/button": "2.0.34",

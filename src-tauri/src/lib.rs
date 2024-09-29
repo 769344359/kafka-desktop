@@ -1,3 +1,4 @@
+use rdkafka::client;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::groups::GroupList;
@@ -12,11 +13,24 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
+#[derive(Debug,Clone,Serialize)]
+pub struct EGroupsInfo{
+    pub state :String,
+    pub members: Vec<Member>,
+    pub name:String
+
+}
+#[derive(Debug,Clone,Serialize)]
+pub struct Member{
+    pub client_id : String,
+
+}
+
 #[derive(Serialize,Clone,Debug)]
 pub struct Config {
    pub brokers: String,
    pub topics: Vec<String>,
-   pub groups: Vec<String>,
+   pub groups: Vec<EGroupsInfo>,
    pub header: bool,
    pub host: bool,
    pub size: bool,
@@ -29,34 +43,46 @@ pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
     .set("message.timeout.ms", "5000")
     .create()
     .expect("Producer creation error");
+    let mut list : Vec<EGroupsInfo> = Vec::new();
   let res =   producer.client().fetch_group_list(None, Timeout::After(Duration::new(5,0)));
     match res {
         Ok(ok) =>{
            let groupList =  ok.groups();
 
-           let mut  l = Vec::new();
            println!("aaaabbb{:?}: empty" ,groupList);
+
            for  val in groupList {
             // println!("---{:?}", val.members());
             println!("state: {:?}",val.state());
             if val.state() == "Empty"{
-                println!("clientId: empty")
+                list.push(EGroupsInfo{
+                    state:String::from("Empty"),
+                    members: Vec::new(),
+                    name:String::from(val.name()),
+                });
             }else{
-                println!("clientId: not null");
+                let mut members = Vec::new();
                 for  a in  val.members(){
-                
+                    members.push(Member{
+                        client_id:String::from(a.client_id())
+                    });
                     println!("clientid :{:?}", a.client_id())
                 }
+                list.push(EGroupsInfo{
+                    state: String::from("NotEmpty"),
+                    members:members,
+                    name:String::from(val.name()),
+                })
             }
-             l.push(String::from(val.name()))
+        
            }
-           cfg.groups = l;
+           cfg.groups = list;
         },
         Err(err)=>{
             println!("aaa err{:?}" , err)
         }
     }
-    println!("all group is {:?}" , cfg);
+    println!("all group is {:?}" , cfg.groups);
         Ok(cfg)
 }
 pub fn get_all_topic(cfg :&mut Config) -> Result<&mut Config, String>{
