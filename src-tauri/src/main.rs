@@ -33,8 +33,26 @@ fn get_all_topic_from_server(server:String)->app_lib::Config{
             host: false,
             size: false,
             topic_separators: false,
+            err:None
         };
   let res :Result<&mut app_lib::Config,   KafkaError>=  app_lib::get_all_topic(cfg);
+  match res{
+    Ok(ok)=>{
+        return ok.clone();
+    },
+    Err(err) =>{
+        return app_lib::Config{
+            brokers:server.to_string(),    
+            topics: Vec::new(),
+            groups: Vec::new(),
+            header: false,
+            host: false,
+            size: false,
+            topic_separators: false,
+            err: Some(format!("{:?}",err))
+        }
+    }
+  }
   return  res.unwrap().clone()
 
 }
@@ -58,8 +76,26 @@ fn get_all_group_from_kafka(server:String) -> app_lib::Config {
             host: false,
             size: false,
             topic_separators: false,
+            err:None,
         };
   let res =  app_lib::get_all_group(cfg);
+  match res{
+    Ok(ok)=>{
+        return ok.clone();
+    },
+    Err(err) =>{
+      return   app_lib::Config{
+            brokers:server.to_string(),    
+            topics: Vec::new(),
+            groups: Vec::new(),
+            header: false,
+            host: false,
+            size: false,
+            topic_separators: false,
+            err:Some(format!("{:?}",err)) 
+        }
+    }
+  }
   return  res.unwrap().clone()
 }
 fn main() {

@@ -36,9 +36,10 @@ pub struct Config {
    pub host: bool,
    pub size: bool,
    pub topic_separators: bool,
+   pub err : Option<String>
 }
 
-pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
+pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,KafkaError>{
     let producer: &BaseProducer = &ClientConfig::new()
     .set("bootstrap.servers", cfg.brokers.clone())
     .set("message.timeout.ms", "5000")
@@ -80,7 +81,7 @@ pub fn get_all_group(cfg :&mut Config) -> Result<&mut Config,String>{
            cfg.groups = list;
         },
         Err(err)=>{
-            println!("aaa err{:?}" , err)
+           return Err(err);
         }
     }
     println!("all group is {:?}" , cfg.groups);
@@ -90,8 +91,7 @@ pub fn get_all_topic(cfg :&mut Config) -> Result<&mut Config,   KafkaError>{
 
     let consumer: BaseConsumer = ClientConfig::new()
     .set("bootstrap.servers", cfg.brokers.clone())
-    .create()
-    .expect("Consumer creation failed");
+    .create()?;
 let metadata = consumer
 .fetch_metadata(None,  Duration::new(5, 0))?;
 for topic in metadata.topics() {
