@@ -7,6 +7,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord};
 use std::fmt::Write;
 use std::time::Duration;
 use tauri::{Config, Manager};
+use rdkafka::error::KafkaError;
 use rdkafka::producer::BaseProducer;
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
@@ -33,7 +34,7 @@ fn get_all_topic_from_server(server:String)->app_lib::Config{
             size: false,
             topic_separators: false,
         };
-  let res =  app_lib::get_all_topic(cfg);
+  let res :Result<&mut app_lib::Config,   KafkaError>=  app_lib::get_all_topic(cfg);
   return  res.unwrap().clone()
 
 }

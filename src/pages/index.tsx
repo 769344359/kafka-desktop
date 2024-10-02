@@ -37,7 +37,7 @@ export default function IndexPage() {
    })
    allgroup.then(re =>{
     setGroups(re.groups)
-    console.log("aaaaa" + JSON.stringify(re.groups))
+    console.log("aba" + JSON.stringify(re))
    })
 }
   const theStyle={"margin-top":"20px"}
@@ -92,9 +92,9 @@ export default function IndexPage() {
             </TableHeader>
             <TableBody>
             {groups.map(item => (
-              <TableRow key={item}>
-              <TableCell>{item}</TableCell>
-              <TableCell>CEO</TableCell>
+              <TableRow key={item.name}>
+              <TableCell>{item.name}</TableCell>
+              <TableCell>{item.members[0].client_id}</TableCell>
               <TableCell>Active</TableCell>
             </TableRow>
               ))}
