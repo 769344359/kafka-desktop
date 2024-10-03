@@ -7,6 +7,8 @@ import {Input} from "@nextui-org/input";
 import { invoke } from "@tauri-apps/api/core";
 import toast, { Toaster } from 'react-hot-toast';
 import {Tabs, Tab} from "@nextui-org/tabs";
+import React from "react";
+
 import {
   Table,
   TableHeader,
@@ -41,10 +43,19 @@ export default function IndexPage() {
    })
 }
   const theStyle={"margin-top":"20px"}
+  const widthFull =  {"width":"100%"}
+  // const  tabClassNames = {panel:{"width":"100%"}};
+  const classNames = React.useMemo(
+    () => ({
+      panel: ["w-full"],
+
+    }),
+    [],
+  );
   return (
     
     <DefaultLayout>
-       <Tabs aria-label="Options" isVertical={isVertical}>
+       <Tabs aria-label="Options" isVertical={isVertical} classNames={classNames}>
           <Tab key="send_message" title="Send">
               <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
                 <Input type="input" label="bootstrap server" value={bootstrap} onValueChange={setBootstrap} />
@@ -71,7 +82,7 @@ export default function IndexPage() {
         <TableColumn>ROLE</TableColumn>
         <TableColumn>STATUS</TableColumn>
       </TableHeader>
-      <TableBody>
+      <TableBody >
       {table.map(item => (
         <TableRow key={item}>
         <TableCell>{item}</TableCell>
@@ -82,12 +93,12 @@ export default function IndexPage() {
 
       </TableBody>
           </Table>
-                </Tab>
-                <Tab key="groups"  title="Groups" >
-                <Table aria-label="Example static collection table">
+          </Tab>
+          <Tab key="groups"  title="Groups"    >
+                <Table   aria-label="Example static collection table">
             <TableHeader>
               <TableColumn>Groups</TableColumn>
-              <TableColumn>ROLE</TableColumn>
+              <TableColumn>ClientId</TableColumn>
               <TableColumn>STATUS</TableColumn>
             </TableHeader>
             <TableBody>
