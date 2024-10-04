@@ -2,13 +2,16 @@
 import DefaultLayout from "@/layouts/default";
 import {Button, ButtonGroup} from "@nextui-org/button";
 import {Textarea} from "@nextui-org/input";
-import  { useState } from 'react';
+import  { useEffect, useState } from 'react';
 import {Input} from "@nextui-org/input";
-import { invoke } from "@tauri-apps/api/core";
+// import { invoke } from "@tauri-apps/api/core";
 import toast, { Toaster } from 'react-hot-toast';
 import {Tabs, Tab} from "@nextui-org/tabs";
 import React from "react";
-
+import { invoke, Channel } from '@tauri-apps/api/core';
+import { createStore ,Store} from '@tauri-apps/plugin-store';
+import store,{setData} from '../store.ts'
+import { UseSelector, useSelector } from "react-redux";
 import {
   Table,
   TableHeader,
@@ -17,19 +20,91 @@ import {
   TableRow,
   TableCell
 } from "@nextui-org/table";
+type KafkaConfig ={
+  topic:string,
+  server:string,
+};
+
+type KafkaMessage ={
+  key:string,
+  value:string,
+  header:string,
+}
+
+let num = 0;
+const onEvent = new Channel<KafkaMessage[]>();
+onEvent.onmessage = (messageList:KafkaMessage[]) => {
+  console.log("the message is")
+  console.log(messageList)
+  store.dispatch({type:'counter/setData' ,payload:messageList})
+};
+function setValue(messageList:KafkaMessage[]){
+
+}
+
+
+
+
+
+
+
 export default function IndexPage() {
+  
   const [bootstrap, setBootstrap] = useState('');
   const [topic, setTopic] = useState('');
   const [message,setMessage] = useState('');
   const [isVertical , setIsVertical] = useState(true);
   const [table , setTable] = useState([])
   const [groups,setGroups] = useState([])
+  const [kafkaMessage,setKafkaMessage] = useState([])
+  // const vv = useSelector( (one) => one.value)
+  const storeAware = createStore('store1.bin', {
+    // we can save automatically after each store modification
+  });
+
+  console.log("aba")
+  storeAware.then((store) =>{
+    store.get<KafkaConfig>("1").then((value) =>{
+      num++;
+      if(value != null && num == 2){
+
+        console.log("modify---"+num)
+        console.log(value)
+        setTopic(value.topic)
+        setBootstrap(value.server)
+      }
+    })
+  })
+  const startConsumer = () =>{
+
+    let  consumeRes =  invoke("consume_kafka",{ config:{ server:bootstrap ,topic:topic}, onEvent})
+
+  }
+  store.subscribe(() => {
+    console.log("fffab")
+    let tem = JSON.parse(JSON.stringify(store.getState().value))
+    console.log(tem)
+    setKafkaMessage(tem)
+  }
+)
+
   const buttonSubmit = () =>{
     console.log( "topic is" + topic);
     console.log("bootstrap is" + bootstrap);
+  
+    storeAware.then( (store)=>{
+      let config :KafkaConfig ={
+        server:bootstrap,
+        topic:topic
+      };
+      store.set("1",config)
+      store.save()
+    })
+
    let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
    let alltopic  = invoke('get_all_topic_from_server',{server:bootstrap})
    let allgroup = invoke('get_all_group_from_kafka',{server:bootstrap} )
+
    alltopic.then(re=>{
     setTable(re.topics)
      console.log("aaaaa" + JSON.stringify(re.topics))
@@ -42,7 +117,7 @@ export default function IndexPage() {
     console.log("aba" + JSON.stringify(re))
    })
 }
-  const theStyle={"margin-top":"20px"}
+  const theStyle={"marginTop":"20px"}
   const widthFull =  {"width":"100%"}
   // const  tabClassNames = {panel:{"width":"100%"}};
   const classNames = React.useMemo(
@@ -95,6 +170,7 @@ export default function IndexPage() {
           </Table>
           </Tab>
           <Tab key="groups"  title="Groups"    >
+ 
                 <Table   aria-label="Example static collection table">
             <TableHeader>
               <TableColumn>Groups</TableColumn>
@@ -103,10 +179,35 @@ export default function IndexPage() {
             </TableHeader>
             <TableBody>
             {groups.map(item => (
-              <TableRow key={item.name}>
-              <TableCell>{item.name}</TableCell>
-              <TableCell>{item.members[0].client_id}</TableCell>
+              <TableRow key={item?.name}>
+              <TableCell>{item?.name}</TableCell>
+              <TableCell>{item?.name}</TableCell>
+              {/* <TableCell>{item?.members[0]?.client_id}</TableCell> */}
               <TableCell>Active</TableCell>
+            </TableRow>
+              ))}
+
+            </TableBody>
+          </Table>
+           </Tab>
+           <Tab key="consumer"  title="Consumer"    >
+           <Button color="primary" onClick={startConsumer}>
+            Start
+           </Button>
+           
+                <Table   aria-label="Example static collection table">
+            <TableHeader>
+              <TableColumn>Key</TableColumn>
+              <TableColumn>Value</TableColumn>
+              <TableColumn>Header</TableColumn>
+            </TableHeader>
+            <TableBody>
+            {kafkaMessage.map(item => (
+              <TableRow key={item.value}>
+              <TableCell>{item.key}</TableCell>
+              <TableCell>{item.value}</TableCell>
+              {/* <TableCell>{item.members[0].client_id}</TableCell> */}
+              <TableCell>{item.header}</TableCell>
             </TableRow>
               ))}
 

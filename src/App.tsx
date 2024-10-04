@@ -7,6 +7,8 @@ import BlogPage from "@/pages/blog";
 import AboutPage from "@/pages/about";
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { Provider } from 'react-redux';
+import store from './store';
 function App() {
   // const [greetMsg, setGreetMsg] = useState("");
   // const [name, setName] = useState("");
@@ -53,7 +55,9 @@ function App() {
   // );
   return (
     <Routes>
+
       <Route element={<IndexPage />} path="/" />
+
       <Route element={<DocsPage />} path="/docs" />
       <Route element={<PricingPage />} path="/pricing" />
       <Route element={<BlogPage />} path="/blog" />
