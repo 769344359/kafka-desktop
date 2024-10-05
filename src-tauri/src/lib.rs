@@ -45,7 +45,8 @@ pub struct Config {
 }
 #[derive(Clone, Serialize)]
 pub struct EMessage {
-    pub key: String,
+    pub index:i64,
+    pub key: Option<String>,
     pub value:Option<String>,
     pub header:Option<String>,
 }
@@ -83,7 +84,9 @@ pub struct EMessage {
 //     return  Ok(list.clone());
 
 // }
+pub static  mut  index:i64 = 0;
 pub fn get_all_group(cfg: &mut Config) -> Result<&mut Config, KafkaError> {
+
     let producer: &BaseProducer = &ClientConfig::new()
         .set("bootstrap.servers", cfg.brokers.clone())
         .set("message.timeout.ms", "5000")

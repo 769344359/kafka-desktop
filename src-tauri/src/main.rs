@@ -76,10 +76,17 @@ async fn consume_kafka(app: AppHandle, config: app_lib::ConsumerConfig, on_event
 
         match res {
             Ok(message) => {
+                
                 match message.payload_view::<str>() {
                     Some(Ok(m)) => {
+                        let mut temp = 0;
+                        unsafe {
+                           app_lib::index = app_lib::index +1;
+                           temp  = app_lib::index;
+                        }
                         list.push(EMessage {
-                            key: String::from(m.clone()),
+                            index:temp,
+                            key: key_helper(&message),
                             value:Some(m.to_string()),
                             header:None
                         });
@@ -102,6 +109,18 @@ async fn consume_kafka(app: AppHandle, config: app_lib::ConsumerConfig, on_event
             }
         }
     }
+}
+fn key_helper<>(mess :&rdkafka::message::BorrowedMessage )->Option<String>{
+    match mess.key_view::<str>(){
+        Some(Ok(k))=>{
+            Some(String::from(k.clone()))
+        }, 
+        None => None,
+        Some(Err(e))=>{
+            Some(format!("{:?}","fmt key err"))
+        }
+    }
+
 }
 //   return  Ok(list.clone());
 

@@ -29,6 +29,7 @@ type KafkaMessage ={
   key:string,
   value:string,
   header:string,
+  index:number,
 }
 
 let num = 0;
@@ -56,7 +57,7 @@ export default function IndexPage() {
   const [isVertical , setIsVertical] = useState(true);
   const [table , setTable] = useState([])
   const [groups,setGroups] = useState([])
-  const [kafkaMessage,setKafkaMessage] = useState([])
+  const [kafkaMessage,setKafkaMessage] = useState<KafkaMessage>([])
   // const vv = useSelector( (one) => one.value)
   const storeAware = createStore('store1.bin', {
     // we can save automatically after each store modification
@@ -203,7 +204,7 @@ export default function IndexPage() {
             </TableHeader>
             <TableBody>
             {kafkaMessage.map(item => (
-              <TableRow key={item.value}>
+              <TableRow key={item.index}>
               <TableCell>{item.key}</TableCell>
               <TableCell>{item.value}</TableCell>
               {/* <TableCell>{item.members[0].client_id}</TableCell> */}
