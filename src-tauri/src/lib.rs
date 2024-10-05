@@ -49,6 +49,9 @@ pub struct EMessage {
     pub key: Option<String>,
     pub value:Option<String>,
     pub header:Option<String>,
+    pub timestamp:Option<i64>,
+    pub offset:i64,
+    pub partition:i32,
 }
 
 // pub fn comsume_message(cfg :&mut Config , size: i64) -> Result<Vec<EMessage>,KafkaError>  {

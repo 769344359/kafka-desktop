@@ -30,6 +30,9 @@ type KafkaMessage ={
   value:string,
   header:string,
   index:number,
+  timestamp:number,
+  offset:number,
+  partition:number,
 }
 
 let num = 0;
@@ -50,7 +53,7 @@ function setValue(messageList:KafkaMessage[]){
 
 
 export default function IndexPage() {
-  
+  const [consumeTopic,setConsumeTopic] = useState('')
   const [bootstrap, setBootstrap] = useState('');
   const [topic, setTopic] = useState('');
   const [message,setMessage] = useState('');
@@ -78,7 +81,10 @@ export default function IndexPage() {
   })
   const startConsumer = () =>{
 
-    let  consumeRes =  invoke("consume_kafka",{ config:{ server:bootstrap ,topic:topic}, onEvent})
+    let  consumeRes =  invoke("consume_kafka",{ config:{ server:bootstrap ,topic:consumeTopic}, onEvent})
+    consumeRes.then((list) =>{
+      setKafkaMessage(list)
+    })
 
   }
   store.subscribe(() => {
@@ -192,6 +198,7 @@ export default function IndexPage() {
           </Table>
            </Tab>
            <Tab key="consumer"  title="Consumer"    >
+           <Input type="input" label="consumeTopic" value={consumeTopic} onValueChange={setConsumeTopic} />
            <Button color="primary" onClick={startConsumer}>
             Start
            </Button>
@@ -201,6 +208,9 @@ export default function IndexPage() {
               <TableColumn>Key</TableColumn>
               <TableColumn>Value</TableColumn>
               <TableColumn>Header</TableColumn>
+              <TableColumn>Timestamp</TableColumn>
+              <TableColumn>Offset</TableColumn>
+              <TableColumn>Partition</TableColumn>
             </TableHeader>
             <TableBody>
             {kafkaMessage.map(item => (
@@ -209,6 +219,9 @@ export default function IndexPage() {
               <TableCell>{item.value}</TableCell>
               {/* <TableCell>{item.members[0].client_id}</TableCell> */}
               <TableCell>{item.header}</TableCell>
+              <TableCell>{item.timestamp}</TableCell>
+              <TableCell>{item.offset}</TableCell>
+              <TableCell>{item.partition}</TableCell>
             </TableRow>
               ))}
 
