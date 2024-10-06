@@ -18,5 +18,10 @@ export const { setData } = counterSlice.actions
 const store = configureStore({
   reducer: counterSlice.reducer
 });
+export type SlotResource={
+  slotNum:number,
+  server:string,
+  
+}
 export default store;
 

@@ -7,7 +7,12 @@ use rdkafka::producer::{BaseProducer, Producer};
 use rdkafka::util::Timeout;
 use rdkafka::Message;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::time::Duration;
+use std::sync::{Arc, Mutex,MutexGuard};
+use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -20,6 +25,13 @@ pub struct EGroupsInfo {
     pub state: String,
     pub members: Vec<Member>,
     pub name: String,
+}
+#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+
+pub struct SlotResource{
+    pub slot_num:i64,
+    pub server:String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +66,8 @@ pub struct EMessage {
     pub partition:i32,
 }
 
+
+
 // pub fn comsume_message(cfg :&mut Config , size: i64) -> Result<Vec<EMessage>,KafkaError>  {
 //     let consumer: BaseConsumer = ClientConfig::new()
 //     .set("bootstrap.servers", cfg.brokers.clone())
@@ -87,6 +101,40 @@ pub struct EMessage {
 //     return  Ok(list.clone());
 
 // }
+
+
+pub fn get_consumer(resource :SlotResource)-> Arc<BaseConsumer>{
+
+    let  mutexMap:&'static  Mutex<HashMap<i64,Arc<BaseConsumer>>> =   get_global_consumer_map();
+    let mut lock : MutexGuard<HashMap<i64,Arc<BaseConsumer>>> = mutexMap.lock().unwrap();
+    let isExist  =  lock.get(&resource.slot_num);
+    match isExist{
+        None =>{
+            let consumer:BaseConsumer = ClientConfig::new()
+            .set("group.id", "aaa")
+            .set("bootstrap.servers", resource.server.clone())
+            .create()
+            .unwrap();
+            let consumeArc = Arc::new(consumer);
+            lock.insert(resource.slot_num,consumeArc.clone());
+            return consumeArc;
+        },
+        Some(one) =>{
+            return one.clone();
+        }
+    } 
+
+}
+
+pub static MAP:OnceCell<Mutex<HashMap<i64,Arc<BaseConsumer>>>> = OnceCell::new();
+pub fn get_global_consumer_map() ->  &'static  Mutex<HashMap<i64,Arc<BaseConsumer>>> {
+   MAP.get_or_init(|| {
+    let hash :HashMap<i64,Arc<BaseConsumer>> = HashMap::new();
+    let metux =  Mutex::new(hash);
+    return metux;
+   })
+}
+
 pub static  mut  index:i64 = 0;
 pub fn get_all_group(cfg: &mut Config) -> Result<&mut Config, KafkaError> {
 

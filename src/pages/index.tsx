@@ -10,8 +10,13 @@ import {Tabs, Tab} from "@nextui-org/tabs";
 import React from "react";
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { createStore ,Store} from '@tauri-apps/plugin-store';
-import store,{setData} from '../store.ts'
+import store,{setData,SlotResource} from '../store.ts'
 import { UseSelector, useSelector } from "react-redux";
+import {
+  Autocomplete,
+  AutocompleteSection,
+  AutocompleteItem
+} from "@nextui-org/autocomplete";
 import {
   Table,
   TableHeader,
@@ -61,6 +66,8 @@ export default function IndexPage() {
   const [table , setTable] = useState([])
   const [groups,setGroups] = useState([])
   const [kafkaMessage,setKafkaMessage] = useState<KafkaMessage>([])
+  const [topicList,setTopicList] = useState([]);
+  const [selectedTopic,setSelectedTopic] = useState('')
   // const vv = useSelector( (one) => one.value)
   const storeAware = createStore('store1.bin', {
     // we can save automatically after each store modification
@@ -80,8 +87,11 @@ export default function IndexPage() {
     })
   })
   const startConsumer = () =>{
-
-    let  consumeRes =  invoke("consume_kafka",{ config:{ server:bootstrap ,topic:consumeTopic}, onEvent})
+    let resource :SlotResource={
+      slotNum:1,
+      server:bootstrap,
+    } 
+    let  consumeRes =  invoke("consume_kafka",{resource:resource,  config:{ server:bootstrap ,topic:consumeTopic}, onEvent})
     consumeRes.then((list) =>{
       setKafkaMessage(list)
     })
@@ -94,7 +104,15 @@ export default function IndexPage() {
     setKafkaMessage(tem)
   }
 )
-
+  const tryGetAllTopic = ()=>{
+    let topicPromise  = invoke('get_all_topic_from_server',{server:bootstrap})
+    topicPromise.then((re) =>{
+       let tem =  re.topics;
+       console.log("result")
+       console.log(re)
+       setTopicList(tem)
+    });
+  }
   const buttonSubmit = () =>{
     console.log( "topic is" + topic);
     console.log("bootstrap is" + bootstrap);
@@ -109,9 +127,13 @@ export default function IndexPage() {
     })
 
    let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
-   let alltopic  = invoke('get_all_topic_from_server',{server:bootstrap})
+   let resource :SlotResource={
+     slotNum:1,
+     server:bootstrap,
+   } 
+   let alltopic  = invoke('get_all_topic_from_server',resource)
    let allgroup = invoke('get_all_group_from_kafka',{server:bootstrap} )
-
+   tryGetAllTopic()
    alltopic.then(re=>{
     setTable(re.topics)
      console.log("aaaaa" + JSON.stringify(re.topics))
@@ -198,7 +220,18 @@ export default function IndexPage() {
           </Table>
            </Tab>
            <Tab key="consumer"  title="Consumer"    >
-           <Input type="input" label="consumeTopic" value={consumeTopic} onValueChange={setConsumeTopic} />
+           <Autocomplete 
+        label="Select an animal" 
+        className="max-w-xs" 
+        selectedKey={consumeTopic}
+        onSelectionChange={setConsumeTopic}
+      >
+        {topicList.map((animal) => (
+          <AutocompleteItem key={animal} value={animal}>
+            {animal}
+          </AutocompleteItem>
+        ))}
+      </Autocomplete>
            <Button color="primary" onClick={startConsumer}>
             Start
            </Button>

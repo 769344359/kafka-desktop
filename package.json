@@ -11,6 +11,7 @@
     "tauri": "RUST_BACKTRACE=1 WEBKIT_DISABLE_COMPOSITING_MODE=1  tauri"
   },
   "dependencies": {
+    "@nextui-org/autocomplete": "^2.1.7",
     "@nextui-org/button": "2.0.34",
     "@nextui-org/code": "2.0.29",
     "@nextui-org/input": "2.2.2",

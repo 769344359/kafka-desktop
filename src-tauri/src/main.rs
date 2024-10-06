@@ -15,6 +15,7 @@ use std::time::Duration;
 use tauri::{ipc::Channel, AppHandle};
 use rdkafka::util::Timeout;
 use tauri::{Config, Manager};
+use std::sync::{Arc, Mutex,MutexGuard};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -60,19 +61,20 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
 }
 
 #[tauri::command]
- async fn consume_kafka( config: app_lib::ConsumerConfig) ->Result<Vec<EMessage>,String> {
+ async fn consume_kafka( resource:app_lib::SlotResource, config: app_lib::ConsumerConfig) ->Result<Vec<EMessage>,String> {
     let content_length = 1000;
 
-    let consumer: BaseConsumer = ClientConfig::new()
-        .set("group.id", "aaa")
-        .set("bootstrap.servers", config.server.clone())
-        .create()
-        .unwrap();
+    // let consumer: BaseConsumer = ClientConfig::new()
+    //     .set("group.id", "aaa")
+    //     .set("bootstrap.servers", resource.server.clone())
+    //     .create()
+    //     .unwrap();
+    let consumeArc:Arc<BaseConsumer> = app_lib::get_consumer(resource);
     println!("config {:?}", config);
     let _slice: Vec<&str> = vec![config.topic.as_str()];
     println!("water 2------" );
      
-
+    let consumer = consumeArc;
 
   
     consumer.subscribe(_slice.as_slice());
