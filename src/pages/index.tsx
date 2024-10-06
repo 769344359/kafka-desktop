@@ -58,14 +58,14 @@ function setValue(messageList:KafkaMessage[]){
 
 
 export default function IndexPage() {
-  const [consumeTopic,setConsumeTopic] = useState('')
+  const [consumeTopic,setConsumeTopic] = useState<string|null|number>("")
   const [bootstrap, setBootstrap] = useState('');
   const [topic, setTopic] = useState('');
   const [message,setMessage] = useState('');
   const [isVertical , setIsVertical] = useState(true);
   const [table , setTable] = useState([])
-  const [groups,setGroups] = useState([])
-  const [kafkaMessage,setKafkaMessage] = useState<KafkaMessage>([])
+  const [groups,setGroups] = useState<any[]>([])
+  const [kafkaMessage,setKafkaMessage] = useState<KafkaMessage[]>([])
   const [topicList,setTopicList] = useState([]);
   const [selectedTopic,setSelectedTopic] = useState('')
   // const vv = useSelector( (one) => one.value)
@@ -93,7 +93,8 @@ export default function IndexPage() {
     } 
     let  consumeRes =  invoke("consume_kafka",{resource:resource,  config:{ server:bootstrap ,topic:consumeTopic}, onEvent})
     consumeRes.then((list) =>{
-      setKafkaMessage(list)
+      let temp : KafkaMessage[]= list as  KafkaMessage[];  
+      setKafkaMessage(temp)
     })
 
   }
@@ -105,7 +106,7 @@ export default function IndexPage() {
   }
 )
   const tryGetAllTopic = ()=>{
-    let topicPromise  = invoke('get_all_topic_from_server',{server:bootstrap})
+    let topicPromise :Promise<any> = invoke('get_all_topic_from_server',{server:bootstrap})
     topicPromise.then((re) =>{
        let tem =  re.topics;
        console.log("result")
@@ -131,17 +132,17 @@ export default function IndexPage() {
      slotNum:1,
      server:bootstrap,
    } 
-   let alltopic  = invoke('get_all_topic_from_server',resource)
-   let allgroup = invoke('get_all_group_from_kafka',{server:bootstrap} )
+   let alltopic :any  = invoke('get_all_topic_from_server',resource)
+   let allgroup:any = invoke('get_all_group_from_kafka',{server:bootstrap} )
    tryGetAllTopic()
-   alltopic.then(re=>{
+   alltopic.then((re:any ) =>{
     setTable(re.topics)
      console.log("aaaaa" + JSON.stringify(re.topics))
    })
    res.then((m) =>{ 
     toast('Here is your toast. ' + m )
    })
-   allgroup.then(re =>{
+   allgroup.then( (re :any)=>{
     setGroups(re.groups)
     console.log("aba" + JSON.stringify(re))
    })

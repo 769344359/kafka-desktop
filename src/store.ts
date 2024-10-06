@@ -9,7 +9,7 @@ const counterSlice = createSlice({
     setData: (state, newValue) => {
       console.log("value is is")
       console.log(newValue.payload)
-        state.value = newValue.payload.filter( one => true)
+        state.value = newValue.payload
     },
   }
 })
