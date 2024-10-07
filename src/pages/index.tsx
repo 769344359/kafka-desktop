@@ -141,6 +141,7 @@ export default function IndexPage() {
     let temp =JSON.parse(JSON.stringify(resourceStore.getState().value));
     Object.freeze(temp)
     temp[0].isDisabled=true;
+    temp[0].disabledKeys = [];
    let args =  {type:'resourceConfigSlice/setData' ,payload:temp}
     resourceStore.dispatch(args)
    })
@@ -162,7 +163,7 @@ export default function IndexPage() {
   return (
     
     <DefaultLayout>
-       <Tabs aria-label="Options" isVertical={isVertical} classNames={classNames}>
+       <Tabs aria-label="Options" isVertical={isVertical} classNames={classNames} disabledKeys={resourceStore.getState().value[0].disabledKeys}>
           <Tab key="send_message" title="Send">
               <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
                 <Input type="input" label="bootstrap server" value={bootstrap} onValueChange={setBootstrap} />

@@ -5,13 +5,14 @@ export type KafkaConfig ={
 };
 export type ResourceConfig = {
   index:number,
-  isDisabled:boolean
+  isDisabled:boolean,
+  disabledKeys:string[]
 }
 
 let  resourceConfigSlice = createSlice({
   name: 'resourceConfigSlice',
   initialState: {
-    value: [{index:0,isDisabled:false}] as ResourceConfig[]
+    value: [{index:0,isDisabled:false,disabledKeys:['topic','groups','consumer'],}] as ResourceConfig[]
   },
   reducers: {
     setData: (state, newValue) => {
