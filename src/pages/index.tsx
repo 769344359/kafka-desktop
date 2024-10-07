@@ -10,7 +10,7 @@ import {Tabs, Tab} from "@nextui-org/tabs";
 import React from "react";
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { createStore ,Store} from '@tauri-apps/plugin-store';
-import store,{setData,SlotResource} from '../store.ts'
+import store,{setData,SlotResource,KafkaConfig,resourceStore} from '../store.ts'
 import { UseSelector, useSelector } from "react-redux";
 import {
   Autocomplete,
@@ -25,10 +25,7 @@ import {
   TableRow,
   TableCell
 } from "@nextui-org/table";
-type KafkaConfig ={
-  topic:string,
-  server:string,
-};
+
 
 type KafkaMessage ={
   key:string,
@@ -141,6 +138,11 @@ export default function IndexPage() {
    })
    res.then((m) =>{ 
     toast('Here is your toast. ' + m )
+    let temp =JSON.parse(JSON.stringify(resourceStore.getState().value));
+    Object.freeze(temp)
+    temp[0].isDisabled=true;
+   let args =  {type:'resourceConfigSlice/setData' ,payload:temp}
+    resourceStore.dispatch(args)
    })
    allgroup.then( (re :any)=>{
     setGroups(re.groups)
@@ -175,7 +177,7 @@ export default function IndexPage() {
               </div>
               <Toaster />
               <div style={theStyle}>
-              <Button color="primary" onClick={buttonSubmit}>
+              <Button color="primary"  isDisabled={resourceStore.getState().value[0].isDisabled} onClick={buttonSubmit}>
                 Send
               </Button>
               </div>
