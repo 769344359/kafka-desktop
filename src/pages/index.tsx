@@ -123,12 +123,12 @@ export default function IndexPage() {
       store.set("1",config)
       store.save()
     })
+    let resource :SlotResource={
+      slotNum:1,
+      server:bootstrap,
+    } 
+   let res :Promise<String> =  invoke("try_connect", {resource:resource, server:bootstrap ,topic:topic,message:message})
 
-   let res :Promise<String> =  invoke("send_kafka",{server:bootstrap ,topic:topic,message:message})
-   let resource :SlotResource={
-     slotNum:1,
-     server:bootstrap,
-   } 
    let alltopic :any  = invoke('get_all_topic_from_server',resource)
    let allgroup:any = invoke('get_all_group_from_kafka',{server:bootstrap} )
    tryGetAllTopic()

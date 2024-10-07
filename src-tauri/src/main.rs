@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use app_lib::get_all_topic;
 use app_lib::EMessage;
+use app_lib::SlotResource;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer, StreamConsumer};
 use rdkafka::error::KafkaError;
@@ -247,6 +248,19 @@ fn send_kafka(server: String, topic: String, message: String) -> String {
 }
 
 #[tauri::command]
+fn try_connect(resource:SlotResource, server: String, topic: String, message: String) -> String {
+    
+    let consumeArc:Arc<BaseConsumer> = app_lib::get_consumer(resource);
+
+    let producer: &BaseProducer = &ClientConfig::new()
+        .set("bootstrap.servers", server)
+        .set("message.timeout.ms", "5000")
+        .create()
+        .expect("Producer creation error");
+    return String::from("ok");
+}
+
+#[tauri::command]
 fn get_all_group_from_kafka(server: String) -> app_lib::Config {
     let cfg = &mut app_lib::Config {
         brokers: server.to_string(),
@@ -299,7 +313,8 @@ fn main() {
             send_kafka,
             get_all_topic_from_server,
             get_all_group_from_kafka,
-            consume_kafka
+            consume_kafka,
+            try_connect
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
