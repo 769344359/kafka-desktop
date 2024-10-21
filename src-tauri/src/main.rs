@@ -70,12 +70,15 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
     //     .set("bootstrap.servers", resource.server.clone())
     //     .create()
     //     .unwrap();
-    let consumeArc:Arc<BaseConsumer> = app_lib::get_consumer(resource);
+    let consumeArcTemp:Result<Arc<BaseConsumer>,String> = app_lib::get_consumer(resource);
     println!("config {:?}", config);
     let _slice: Vec<&str> = vec![config.topic.as_str()];
     println!("water 2------" );
-     
-    let consumer = consumeArc;
+     if let Err(e) =  consumeArcTemp  {
+        return Err(e);
+     }
+
+    let consumer = consumeArcTemp.unwrap();
 
   
     consumer.subscribe(_slice.as_slice());
@@ -248,16 +251,23 @@ fn send_kafka(server: String, topic: String, message: String) -> String {
 }
 
 #[tauri::command]
-fn try_connect(resource:SlotResource, server: String, topic: String, message: String) -> String {
+fn try_connect(resource:SlotResource, server: String, topic: String, message: String) -> Result<String,String> {
     
-    let consumeArc:Arc<BaseConsumer> = app_lib::get_consumer(resource);
-
-    let producer: &BaseProducer = &ClientConfig::new()
+    let consumeArc:Result<Arc<BaseConsumer> ,String> = app_lib::get_consumer(resource);
+    if let  Err(e) = consumeArc{
+        return Err(e);
+    }
+    println!("try connect success");
+    let producer: rdkafka::error::KafkaResult<BaseProducer> = ClientConfig::new()
         .set("bootstrap.servers", server)
         .set("message.timeout.ms", "5000")
-        .create()
-        .expect("Producer creation error");
-    return String::from("ok");
+        .create();
+    println!("ababa");
+    if let Err(e) = producer{
+        println!("try err");
+        return Err(format!("{:?}",e));
+    }
+    return Ok(String::from("ok"));
 }
 
 #[tauri::command]

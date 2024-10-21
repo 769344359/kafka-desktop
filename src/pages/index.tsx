@@ -129,13 +129,7 @@ export default function IndexPage() {
     } 
    let res :Promise<String> =  invoke("try_connect", {resource:resource, server:bootstrap ,topic:topic,message:message})
 
-   let alltopic :any  = invoke('get_all_topic_from_server',resource)
-   let allgroup:any = invoke('get_all_group_from_kafka',{server:bootstrap} )
-   tryGetAllTopic()
-   alltopic.then((re:any ) =>{
-    setTable(re.topics)
-     console.log("aaaaa" + JSON.stringify(re.topics))
-   })
+
    res.then((m) =>{ 
     toast('Here is your toast. ' + m )
     let temp =JSON.parse(JSON.stringify(resourceStore.getState().value));
@@ -144,11 +138,21 @@ export default function IndexPage() {
     temp[0].disabledKeys = [];
    let args =  {type:'resourceConfigSlice/setData' ,payload:temp}
     resourceStore.dispatch(args)
+    let alltopic :any  = invoke('get_all_topic_from_server',resource)
+    let allgroup:any = invoke('get_all_group_from_kafka',{server:bootstrap} )
+    tryGetAllTopic()
+    alltopic.then((re:any ) =>{
+     setTable(re.topics)
+      console.log("aaaaa" + JSON.stringify(re.topics))
+    })
+    allgroup.then( (re :any)=>{
+      setGroups(re.groups)
+      console.log("aba" + JSON.stringify(re))
+     })
+
+
    })
-   allgroup.then( (re :any)=>{
-    setGroups(re.groups)
-    console.log("aba" + JSON.stringify(re))
-   })
+
 }
   const theStyle={"marginTop":"20px"}
   const widthFull =  {"width":"100%"}

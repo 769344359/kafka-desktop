@@ -103,24 +103,31 @@ pub struct EMessage {
 // }
 
 
-pub fn get_consumer(resource :SlotResource)-> Arc<BaseConsumer>{
+pub fn get_consumer(resource :SlotResource)-> Result<Arc<BaseConsumer>,String>{
 
     let  mutexMap:&'static  Mutex<HashMap<i64,Arc<BaseConsumer>>> =   get_global_consumer_map();
     let mut lock : MutexGuard<HashMap<i64,Arc<BaseConsumer>>> = mutexMap.lock().unwrap();
     let isExist  =  lock.get(&resource.slot_num);
     match isExist{
         None =>{
-            let consumer:BaseConsumer = ClientConfig::new()
+            let consumer: rdkafka::error::KafkaResult<BaseConsumer> = ClientConfig::new()
             .set("group.id", "aaa")
             .set("bootstrap.servers", resource.server.clone())
-            .create()
-            .unwrap();
-            let consumeArc = Arc::new(consumer);
-            lock.insert(resource.slot_num,consumeArc.clone());
-            return consumeArc;
+            .create();
+            match  consumer{
+                Ok(one) => {
+
+                    let   consumeArc : Arc<BaseConsumer> = Arc::new(one);
+                    lock.insert(resource.slot_num,consumeArc.clone());
+                    return Ok(consumeArc);
+                },
+                Err(err) => {
+                    return Err(format!("{:?}",err));
+                }
+            }
         },
         Some(one) =>{
-            return one.clone();
+            return Ok(one.clone());
         }
     } 
 
