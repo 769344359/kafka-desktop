@@ -10,13 +10,13 @@ use rdkafka::error::KafkaResult;
 use rdkafka::message::{Header, OwnedHeaders};
 use rdkafka::producer::BaseProducer;
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::util::Timeout;
 use rdkafka::Message;
 use std::fmt::Write;
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 use tauri::{ipc::Channel, AppHandle};
-use rdkafka::util::Timeout;
 use tauri::{Config, Manager};
-use std::sync::{Arc, Mutex,MutexGuard};
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -62,7 +62,10 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
 }
 
 #[tauri::command]
- async fn consume_kafka( resource:app_lib::SlotResource, config: app_lib::ConsumerConfig) ->Result<Vec<EMessage>,String> {
+async fn consume_kafka(
+    resource: app_lib::SlotResource,
+    config: app_lib::ConsumerConfig,
+) -> Result<Vec<EMessage>, String> {
     let content_length = 1000;
 
     // let consumer: BaseConsumer = ClientConfig::new()
@@ -70,110 +73,121 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
     //     .set("bootstrap.servers", resource.server.clone())
     //     .create()
     //     .unwrap();
-    let consumeArcTemp:Result<Arc<BaseConsumer>,String> = app_lib::get_consumer(resource);
+    let consumeArcTemp: Result<Arc<BaseConsumer>, String> = app_lib::get_consumer(resource);
     println!("config {:?}", config);
     let _slice: Vec<&str> = vec![config.topic.as_str()];
-    println!("water 2------" );
-     if let Err(e) =  consumeArcTemp  {
+    println!("water 2------");
+    if let Err(e) = consumeArcTemp {
         return Err(e);
-     }
+    }
 
     let consumer = consumeArcTemp.unwrap();
 
-  
     consumer.subscribe(_slice.as_slice());
     consumer.poll(Timeout::After(Duration::new(5, 0)));
     let mut count = 0;
-    loop{
-        count = count+1;
-        if(count > 10){
+    loop {
+        count = count + 1;
+        if (count > 10) {
             break;
         }
-      let ass : KafkaResult<rdkafka::topic_partition_list::TopicPartitionList>= consumer.assignment();
-      match ass {
-          Ok(ok) =>{
-            ok.count();
-            println!("ass ok {:?}, count {:}" , ok,ok.count());
-            if ok.count() > 0{
-            break;
+        let ass: KafkaResult<rdkafka::topic_partition_list::TopicPartitionList> =
+            consumer.assignment();
+        match ass {
+            Ok(ok) => {
+                ok.count();
+                println!("ass ok {:?}, count {:}", ok, ok.count());
+                if ok.count() > 0 {
+                    break;
+                }
+                consumer.poll(Timeout::After(Duration::new(5, 0)));
             }
-            consumer.poll(Timeout::After(Duration::new(5, 0)));
-          },
-          Err(e)=>{
-            println!("err {:?}" ,e)
-          }
-      }
+            Err(e) => {
+                println!("err {:?}", e)
+            }
+        }
     }
-    let  water_res :Result<(i64, i64),KafkaError> =  consumer.fetch_watermarks(config.topic.as_str(), 0,Timeout::After(Duration::new(5, 0)));
-    let water:(i64,i64) = water_res.unwrap();
-    let _offset  = if water.1 - 30 > water.0 {  water.1  - 30 } else{ water.0 };
-    println!("offset is {:?} " , _offset);
-    println!("water t" );
+    let water_res: Result<(i64, i64), KafkaError> = consumer.fetch_watermarks(
+        config.topic.as_str(),
+        0,
+        Timeout::After(Duration::new(5, 0)),
+    );
+    let water: (i64, i64) = water_res.unwrap();
+    let _offset = if water.1 - 30 > water.0 {
+        water.1 - 30
+    } else {
+        water.0
+    };
+    println!("offset is {:?} ", _offset);
+    println!("water t");
     // if let Err(tem) = water_res{
     //     println!("tem {:?}",tem);
     //     return Err(format!("{:?}",tem ));
     // }
-    println!("water {:?}" ,water);
-    let seek_res = consumer.seek(config.topic.as_str(), 0, rdkafka::topic_partition_list::Offset::Offset(_offset)    , Timeout::After(Duration::new(5, 0)));
+    println!("water {:?}", water);
+    let seek_res = consumer.seek(
+        config.topic.as_str(),
+        0,
+        rdkafka::topic_partition_list::Offset::Offset(_offset),
+        Timeout::After(Duration::new(5, 0)),
+    );
     match seek_res {
-        Err(err)=>{
-            println!("seek err{:?}" , err);
-        },
-        Ok(ok)=>{
+        Err(err) => {
+            println!("seek err{:?}", err);
+        }
+        Ok(ok) => {
             println!("ok")
         }
     }
     let mut list: Vec<EMessage> = Vec::new();
-    loop{
-      let res =   consumer.poll( Timeout::After(Duration::new(5, 0)));
-         match res {
+    loop {
+        let res = consumer.poll(Timeout::After(Duration::new(5, 0)));
+        match res {
             Some(Ok(message)) => {
-                
                 match message.payload_view::<str>() {
                     Some(Ok(m)) => {
                         let mut temp = 0;
                         unsafe {
-                           app_lib::index = app_lib::index +1;
-                           temp  = app_lib::index;
+                            app_lib::index = app_lib::index + 1;
+                            temp = app_lib::index;
                         }
                         list.push(EMessage {
-                            index:temp,
+                            index: temp,
                             key: key_helper(&message),
-                            value:Some(m.to_string()),
-                            header:None,
-                            timestamp:getTimeStamp(&message),
-                            offset:message.offset(),
-                            partition:message.partition()
+                            value: Some(m.to_string()),
+                            header: None,
+                            timestamp: getTimeStamp(&message),
+                            offset: message.offset(),
+                            partition: message.partition(),
                         });
                         println!("on message{:?}", m);
                         // on_event.send(list.clone()).unwrap();
                     }
                     Some(Err(e)) => {
                         println!("some err{:?}", e);
-                        return  Err(format!("{:?}" ,e));
+                        return Err(format!("{:?}", e));
                         // Err(KafkaError::AdminOpCreation(String::from("err")))
                     }
                     None => {
                         println!("none");
-                        return  Ok(Vec::new());
+                        return Ok(Vec::new());
                     }
                 }
             }
             Some(Err(err)) => {
                 //    Err(err);
                 println!("some-- err{:?}", err);
-                return  Err(format!("some-- err{:?}", err));
-
-            },
-            None =>{
+                return Err(format!("some-- err{:?}", err));
+            }
+            None => {
                 print!("poll null");
                 break;
             }
-        }     
+        }
     }
     print!("return aaa");
-    list.sort_unstable_by(|a,b|  a.timestamp.cmp(&b.timestamp).reverse() );
-    return Ok(list)
+    list.sort_unstable_by(|a, b| a.timestamp.cmp(&b.timestamp).reverse());
+    return Ok(list);
     //
     // consumer.subscribe(slice.as_slice());
     // let mut list: Vec<EMessage> = Vec::new();
@@ -182,7 +196,7 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
 
     //     match res {
     //         Ok(message) => {
-                
+
     //             match message.payload_view::<str>() {
     //                 Some(Ok(m)) => {
     //                     let mut temp = 0;
@@ -223,20 +237,15 @@ fn get_all_topic_from_server(server: String) -> app_lib::Config {
     //     }
     // }
 }
-fn key_helper<>(mess :&rdkafka::message::BorrowedMessage )->Option<String>{
-    match mess.key_view::<str>(){
-        Some(Ok(k))=>{
-            Some(String::from(k.clone()))
-        }, 
+fn key_helper(mess: &rdkafka::message::BorrowedMessage) -> Option<String> {
+    match mess.key_view::<str>() {
+        Some(Ok(k)) => Some(String::from(k.clone())),
         None => None,
-        Some(Err(e))=>{
-            Some(format!("{:?}","fmt key err"))
-        }
+        Some(Err(e)) => Some(format!("{:?}", "fmt key err")),
     }
-
 }
-fn getTimeStamp(mess :&rdkafka::message::BorrowedMessage) ->Option<i64>{
-     mess.timestamp().to_millis()
+fn getTimeStamp(mess: &rdkafka::message::BorrowedMessage) -> Option<i64> {
+    mess.timestamp().to_millis()
 }
 //   return  Ok(list.clone());
 
@@ -251,35 +260,37 @@ fn send_kafka(server: String, topic: String, message: String) -> String {
 }
 
 #[tauri::command]
-fn try_connect(resource:SlotResource, server: String, topic: String, message: String) -> Result<String,String> {
-    
-    let consumeArc:Result<Arc<BaseConsumer> ,String> = app_lib::get_consumer(resource);
-    if let  Err(e) = consumeArc{
+fn try_connect(
+    resource: SlotResource,
+    server: String,
+    topic: String,
+    message: String,
+) -> Result<String, String> {
+    let consumeArc: Result<Arc<BaseConsumer>, String> = app_lib::get_consumer(resource);
+    if let Err(e) = consumeArc {
         return Err(e);
     }
     println!("try connect success");
     let temp = consumeArc.unwrap();
     let mut count = 0;
-    loop{
-    let res  =temp.poll(Timeout::After(Duration::new(5, 0)));
-    count = count+1;
-    match res {
-        
-        Some(Ok(ok))=>{
-          return   Ok(String::from("ok"));
-        },
-        Some(Err(err)) =>{
-            println!("---{:?}" ,err);
-            return Err(format!("{:?}",err))
-        },
-        None =>{
-            println!("none");
-            if count > 2{
-                return Err(String::from("retry 3 times"))
+    loop {
+        let res = temp.poll(Timeout::After(Duration::new(5, 0)));
+        count = count + 1;
+        match res {
+            Some(Ok(ok)) => {
+                return Ok(String::from("ok"));
+            }
+            Some(Err(err)) => {
+                println!("---{:?}", err);
+                return Err(format!("{:?}", err));
+            }
+            None => {
+                println!("none");
+                if count > 2 {
+                    return Err(String::from("retry 3 times"));
+                }
             }
         }
-   
-    }
     }
     // let producer: rdkafka::error::KafkaResult<BaseProducer> = ClientConfig::new()
     //     .set("bootstrap.servers", server)

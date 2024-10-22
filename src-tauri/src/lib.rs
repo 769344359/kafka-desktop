@@ -1,3 +1,5 @@
+use once_cell::sync::Lazy;
+use once_cell::sync::OnceCell;
 use rdkafka::client;
 use rdkafka::config::ClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
@@ -8,10 +10,8 @@ use rdkafka::util::Timeout;
 use rdkafka::Message;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
-use std::sync::{Arc, Mutex,MutexGuard};
-use once_cell::sync::Lazy;
-use once_cell::sync::OnceCell;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,9 +29,9 @@ pub struct EGroupsInfo {
 #[serde(rename_all = "camelCase")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 
-pub struct SlotResource{
-    pub slot_num:i64,
-    pub server:String,
+pub struct SlotResource {
+    pub slot_num: i64,
+    pub server: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,16 +57,14 @@ pub struct Config {
 }
 #[derive(Clone, Serialize)]
 pub struct EMessage {
-    pub index:i64,
+    pub index: i64,
     pub key: Option<String>,
-    pub value:Option<String>,
-    pub header:Option<String>,
-    pub timestamp:Option<i64>,
-    pub offset:i64,
-    pub partition:i32,
+    pub value: Option<String>,
+    pub header: Option<String>,
+    pub timestamp: Option<i64>,
+    pub offset: i64,
+    pub partition: i32,
 }
-
-
 
 // pub fn comsume_message(cfg :&mut Config , size: i64) -> Result<Vec<EMessage>,KafkaError>  {
 //     let consumer: BaseConsumer = ClientConfig::new()
@@ -102,49 +100,44 @@ pub struct EMessage {
 
 // }
 
-
-pub fn get_consumer(resource :SlotResource)-> Result<Arc<BaseConsumer>,String>{
-
-    let  mutexMap:&'static  Mutex<HashMap<i64,Arc<BaseConsumer>>> =   get_global_consumer_map();
-    let mut lock : MutexGuard<HashMap<i64,Arc<BaseConsumer>>> = mutexMap.lock().unwrap();
-    let isExist  =  lock.get(&resource.slot_num);
-    match isExist{
-        None =>{
+pub fn get_consumer(resource: SlotResource) -> Result<Arc<BaseConsumer>, String> {
+    let mutexMap: &'static Mutex<HashMap<i64, Arc<BaseConsumer>>> = get_global_consumer_map();
+    let mut lock: MutexGuard<HashMap<i64, Arc<BaseConsumer>>> = mutexMap.lock().unwrap();
+    let isExist = lock.get(&resource.slot_num);
+    match isExist {
+        None => {
             let consumer: rdkafka::error::KafkaResult<BaseConsumer> = ClientConfig::new()
-            .set("group.id", "aaa")
-            .set("bootstrap.servers", resource.server.clone())
-            .create();
-            match  consumer{
+                .set("group.id", "aaa")
+                .set("bootstrap.servers", resource.server.clone())
+                .create();
+            match consumer {
                 Ok(one) => {
-
-                    let   consumeArc : Arc<BaseConsumer> = Arc::new(one);
-                    lock.insert(resource.slot_num,consumeArc.clone());
+                    let consumeArc: Arc<BaseConsumer> = Arc::new(one);
+                    lock.insert(resource.slot_num, consumeArc.clone());
                     return Ok(consumeArc);
-                },
+                }
                 Err(err) => {
-                    return Err(format!("{:?}",err));
+                    return Err(format!("{:?}", err));
                 }
             }
-        },
-        Some(one) =>{
+        }
+        Some(one) => {
             return Ok(one.clone());
         }
-    } 
-
+    }
 }
 
-pub static MAP:OnceCell<Mutex<HashMap<i64,Arc<BaseConsumer>>>> = OnceCell::new();
-pub fn get_global_consumer_map() ->  &'static  Mutex<HashMap<i64,Arc<BaseConsumer>>> {
-   MAP.get_or_init(|| {
-    let hash :HashMap<i64,Arc<BaseConsumer>> = HashMap::new();
-    let metux =  Mutex::new(hash);
-    return metux;
-   })
+pub static MAP: OnceCell<Mutex<HashMap<i64, Arc<BaseConsumer>>>> = OnceCell::new();
+pub fn get_global_consumer_map() -> &'static Mutex<HashMap<i64, Arc<BaseConsumer>>> {
+    MAP.get_or_init(|| {
+        let hash: HashMap<i64, Arc<BaseConsumer>> = HashMap::new();
+        let metux = Mutex::new(hash);
+        return metux;
+    })
 }
 
-pub static  mut  index:i64 = 0;
+pub static mut index: i64 = 0;
 pub fn get_all_group(cfg: &mut Config) -> Result<&mut Config, KafkaError> {
-
     let producer: &BaseProducer = &ClientConfig::new()
         .set("bootstrap.servers", cfg.brokers.clone())
         .set("message.timeout.ms", "5000")
