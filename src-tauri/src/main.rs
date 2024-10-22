@@ -258,15 +258,38 @@ fn try_connect(resource:SlotResource, server: String, topic: String, message: St
         return Err(e);
     }
     println!("try connect success");
-    let producer: rdkafka::error::KafkaResult<BaseProducer> = ClientConfig::new()
-        .set("bootstrap.servers", server)
-        .set("message.timeout.ms", "5000")
-        .create();
-    println!("ababa");
-    if let Err(e) = producer{
-        println!("try err");
-        return Err(format!("{:?}",e));
+    let temp = consumeArc.unwrap();
+    let mut count = 0;
+    loop{
+    let res  =temp.poll(Timeout::After(Duration::new(5, 0)));
+    count = count+1;
+    match res {
+        
+        Some(Ok(ok))=>{
+          return   Ok(String::from("ok"));
+        },
+        Some(Err(err)) =>{
+            println!("---{:?}" ,err);
+            return Err(format!("{:?}",err))
+        },
+        None =>{
+            println!("none");
+            if count > 2{
+                return Err(String::from("retry 3 times"))
+            }
+        }
+   
     }
+    }
+    // let producer: rdkafka::error::KafkaResult<BaseProducer> = ClientConfig::new()
+    //     .set("bootstrap.servers", server)
+    //     .set("message.timeout.ms", "5000")
+    //     .create();
+    // println!("ababa");
+    // if let Err(e) = producer{
+    //     println!("try err");
+    //     return Err(format!("{:?}",e));
+    // }
     return Ok(String::from("ok"));
 }
 

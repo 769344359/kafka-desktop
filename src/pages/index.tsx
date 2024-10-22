@@ -151,6 +151,8 @@ export default function IndexPage() {
      })
 
 
+   }).catch( (err )=>{
+    toast( err )
    })
 
 }
