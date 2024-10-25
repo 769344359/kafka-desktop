@@ -286,9 +286,11 @@ fn try_connect(
             }
             None => {
                 println!("none");
-                if count > 2 {
-                    return Err(String::from("retry 3 times"));
-                }
+                return Ok(String::from("ok"));
+                // if count > 2 {
+                //     println!("is closed:{:?}", temp.closed());
+                //     return Err(String::from("retry 3 times"));
+                // }
             }
         }
     }
