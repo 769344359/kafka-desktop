@@ -169,7 +169,20 @@ async fn consume_kafka(
                         // Err(KafkaError::AdminOpCreation(String::from("err")))
                     }
                     None => {
-                        println!("none");
+                        let mut temp = 0;
+                        unsafe {
+                            app_lib::index = app_lib::index + 1;
+                            temp = app_lib::index;
+                        }
+                        list.push(EMessage {
+                            index: temp,
+                            key: key_helper(&message),
+                            value: Some(String::from("[NULL]")),
+                            header: None,
+                            timestamp: getTimeStamp(&message),
+                            offset: message.offset(),
+                            partition: message.partition(),
+                        });
                         return Ok(Vec::new());
                     }
                 }
